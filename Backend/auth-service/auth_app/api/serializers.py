@@ -23,6 +23,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
+class UserLoginSerializer(serializers.Serializer):
+    """
+    Serializes and validates user login requests.
+    """
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializes user profile data for responses.

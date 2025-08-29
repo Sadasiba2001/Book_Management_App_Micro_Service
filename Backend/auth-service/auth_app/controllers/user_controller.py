@@ -70,3 +70,59 @@ class UserController:
         )
         
         return response
+
+    @staticmethod
+    @api_view(['POST'])
+    def login_user(request: Request) -> Response:
+        """
+        API endpoint for user login.
+        POST /api/auth/login/
+        """
+        # Validate incoming data
+        serializer = UserLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"error": "Invalid data", "details": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Extract serializer validated data
+        validated_data = serializer.validated_data
+        email = validated_data['email']
+        password = validated_data['password']
+
+        # Call the service to handle business logic
+        user, token, error = UserService.login_user(
+            email=email,
+            password=password
+        )
+
+        if error:
+            return Response(
+                {"error": error},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Serialize the user for the response
+        response_serializer = UserProfileSerializer(user)
+
+        # Create response
+        response = Response(
+            {
+                "message": "User logged in successfully",
+                "user": response_serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+        # Set JWT token as HTTP-only cookie
+        response.set_cookie(
+            key='access_token',
+            value=token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=24 * 60 * 60
+        )
+        return response
+
