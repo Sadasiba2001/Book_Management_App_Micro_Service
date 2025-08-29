@@ -1,7 +1,7 @@
 from django.urls import path
-from ..controllers import UserController
+from ..controllers import register_user, login_user
 
 urlpatterns = [
-    path('register/', UserController.register_user, name='user-registration'),
-    path('login/', UserController.login_user, name='user-login'),
+    path('register/', register_user, name='user-registration'),
+    path('login/', login_user, name='user-login'),
 ]

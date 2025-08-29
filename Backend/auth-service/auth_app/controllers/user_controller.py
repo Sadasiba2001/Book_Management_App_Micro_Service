@@ -6,122 +6,115 @@ from typing import Tuple
 from ..api import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 from ..services import UserService
 
-class UserController:
+@api_view(['POST'])
+def register_user(request: Request) -> Response:
     """
-    Handles HTTP requests for user-related operations.
+    API endpoint for user registration.
+    POST /api/auth/register/
     """
-
-    @staticmethod
-    @api_view(['POST'])
-    def register_user(request: Request) -> Response:
-        """
-        API endpoint for user registration.
-        POST /api/auth/register/
-        """
-        # Validate incoming data
-        serializer = UserRegistrationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"error": "Invalid data", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Extract validated data
-        validated_data = serializer.validated_data
-        firstname = validated_data.get('firstname')
-        lastname = validated_data.get('lastname')
-        email = validated_data['email']
-        password = validated_data['password']
-
-        # Call the service to handle business logic
-        user, token, error = UserService.register_user(
-            firstname=firstname,
-            lastname=lastname,
-            email=email,
-            password=password,            
+    # Validate incoming data
+    serializer = UserRegistrationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(
+            {"error": "Invalid data", "details": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        if error:
-            return Response(
-                {"error": error},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # Extract validated data
+    validated_data = serializer.validated_data
+    firstname = validated_data.get('firstname')
+    lastname = validated_data.get('lastname')
+    email = validated_data['email']
+    password = validated_data['password']
 
-        # Serialize the created user for the response
-        response_serializer = UserProfileSerializer(user)       
+    # Call the service to handle business logic
+    user, token, error = UserService.register_user(
+        firstname=firstname,
+        lastname=lastname,
+        email=email,
+        password=password,            
+    )
 
-        # Create response
-        response = Response(
-            {
-                "message": "User registered successfully",
-                "user": response_serializer.data
-            },
-            status=status.HTTP_201_CREATED
-        )
-        
-        # Set JWT token as HTTP-only cookie
-        response.set_cookie(
-            key='access_token',
-            value=token,
-            httponly=True,     
-            secure=False,      
-            samesite='Lax',    
-            max_age=24 * 60 * 60 
-        )
-        
-        return response
-
-    @staticmethod
-    @api_view(['POST'])
-    def login_user(request: Request) -> Response:
-        """
-        API endpoint for user login.
-        POST /api/auth/login/
-        """
-        # Validate incoming data
-        serializer = UserLoginSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"error": "Invalid data", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Extract serializer validated data
-        validated_data = serializer.validated_data
-        email = validated_data['email']
-        password = validated_data['password']
-
-        # Call the service to handle business logic
-        user, token, error = UserService.login_user(
-            email=email,
-            password=password
+    if error:
+        return Response(
+            {"error": error},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        if error:
-            return Response(
-                {"error": error},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # Serialize the created user for the response
+    response_serializer = UserProfileSerializer(user)       
 
-        # Serialize the user for the response
-        response_serializer = UserProfileSerializer(user)
+    # Create response
+    response = Response(
+        {
+            "message": "User registered successfully",
+            "user": response_serializer.data
+        },
+        status=status.HTTP_201_CREATED
+    )
+    
+    # Set JWT token as HTTP-only cookie
+    response.set_cookie(
+        key='access_token',
+        value=token,
+        httponly=True,     
+        secure=False,      
+        samesite='Lax',    
+        max_age=24 * 60 * 60 
+    )
+    
+    return response
 
-        # Create response
-        response = Response(
-            {
-                "message": "User logged in successfully",
-                "user": response_serializer.data
-            },
-            status=status.HTTP_200_OK
+@api_view(['POST'])
+def login_user(request: Request) -> Response:
+    """
+    API endpoint for user login.
+    POST /api/auth/login/
+    """
+    # Validate incoming data
+    serializer = UserLoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(
+            {"error": "Invalid data", "details": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        # Set JWT token as HTTP-only cookie
-        response.set_cookie(
-            key='access_token',
-            value=token,
-            httponly=True,
-            secure=False,
-            samesite='Lax',
-            max_age=24 * 60 * 60
+    # Extract serializer validated data
+    validated_data = serializer.validated_data
+    email = validated_data['email']
+    password = validated_data['password']
+
+    # Call the service to handle business logic
+    user, token, error = UserService.login_user(
+        email=email,
+        password=password
+    )
+
+    if error:
+        return Response(
+            {"error": error},
+            status=status.HTTP_400_BAD_REQUEST
         )
-        return response
+
+    # Serialize the user for the response
+    response_serializer = UserProfileSerializer(user)
+
+    # Create response
+    response = Response(
+        {
+            "message": "User logged in successfully",
+            "user": response_serializer.data
+        },
+        status=status.HTTP_200_OK
+    )
+
+    # Set JWT token as HTTP-only cookie
+    response.set_cookie(
+        key='access_token',
+        value=token,
+        httponly=True,
+        secure=False,
+        samesite='Lax',
+        max_age=24 * 60 * 60
+    )
+    return response
