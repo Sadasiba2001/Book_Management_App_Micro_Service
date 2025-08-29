@@ -8,6 +8,27 @@ class UserRepository:
     This abstracts the data layer from the rest of the application.
     """
 
+    
+    @staticmethod
+    def get_all_users() -> Optional[list[User]]:
+        """
+        Retrieve all users.
+        """
+        try:
+            return list(User.objects.all())
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_name(name: str) -> Optional[User]:
+        """
+        Retrieve a user by their name.
+        """
+        try:
+            return User.objects.filter(name__icontains=name).first()
+        except User.DoesNotExist:
+            return None
+
     @staticmethod
     def get_user_by_id(user_id: int) -> Optional[User]:
         """

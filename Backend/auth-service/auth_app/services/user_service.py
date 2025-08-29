@@ -44,12 +44,20 @@ class UserService:
         if not user:
             return None, "User not found."
 
-        if not user.verify_password(password):
+        if not user.check_password(password):
             return None, "Invalid password."
 
         jwt_token = JWTUtils.generate_jwt_token(user.id, user.email)
 
         return user, jwt_token, None
+
+    @staticmethod
+    def get_user (userId: str, name: str, email: str) -> Tuple[Optional[User], Optional[str]]:
+        """Business logic for retrieving a user by various criteria."""
+        user = UserRepository.get_all_users() or UserRepository.get_user_by_id(userId) or UserRepository.get_user_by_name(name) or UserRepository.get_user_by_email(email)
+        if not user:
+            return None, "User not found."
+        return user, None
 
     @staticmethod
     def get_user_profile(user_id: int) -> Optional[User]:

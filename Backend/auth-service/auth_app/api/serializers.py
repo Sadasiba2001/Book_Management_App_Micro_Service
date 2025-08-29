@@ -30,6 +30,9 @@ class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
+    class Meta:
+        fields = ('email', 'password')
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializes user profile data for responses.

@@ -3,13 +3,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from typing import Tuple
-from ..api import UserRegistrationSerializer, UserProfileSerializer
+from ..api import UserRegistrationSerializer, UserProfileSerializer, UserLoginSerializer
 from ..services import UserService
 
+"""
+Handles HTTP requests for user-related operations.
+"""
 class UserController:
-    """
-    Handles HTTP requests for user-related operations.
-    """
 
     @staticmethod
     @api_view(['POST'])
@@ -67,10 +67,9 @@ class UserController:
             secure=False,      
             samesite='Lax',    
             max_age=24 * 60 * 60 
-        )
-        
+        )        
         return response
-
+    
     @staticmethod
     @api_view(['POST'])
     def login_user(request: Request) -> Response:
@@ -86,7 +85,7 @@ class UserController:
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Extract serializer validated data
+        # Extract validated data
         validated_data = serializer.validated_data
         email = validated_data['email']
         password = validated_data['password']
@@ -124,5 +123,45 @@ class UserController:
             samesite='Lax',
             max_age=24 * 60 * 60
         )
+
         return response
 
+    @staticmethod
+    @api_view(['GET'])
+    def get_user(request: Request) -> Response:
+        """
+        API endpoint for retrieving a user by various criteria.
+        GET /api/auth/user/
+        """
+        userId = request.query_params.get("userId")
+        name = request.query_params.get("name")
+        email = request.query_params.get("email")
+
+        user, error = UserService.get_user(userId=userId, name=name, email=email)
+
+        if error:
+            return Response(
+                {"error": error},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize the user for the response
+        serializer = UserLoginSerializer(data=request.data)
+        user, error = UserService.get_user(userId=userId, name=name, email=email)
+
+        if error:
+            return Response(
+                {"error": error},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize the user for the response
+        response_serializer = UserProfileSerializer(user)
+
+        return Response(
+            {
+                "message": "User retrieved successfully",
+                "user": response_serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
