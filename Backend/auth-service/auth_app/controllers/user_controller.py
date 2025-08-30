@@ -38,7 +38,10 @@ class UserController:
             firstname=firstname,
             lastname=lastname,
             email=email,
-            password=password,            
+            password=password,
+            is_superuser=request.data.get('is_superuser', False),
+            is_staff=request.data.get('is_staff', False),
+            is_active=request.data.get('is_active', True)
         )
 
         if error:

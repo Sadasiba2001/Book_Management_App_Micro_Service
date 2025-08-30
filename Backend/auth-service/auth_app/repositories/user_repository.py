@@ -51,7 +51,7 @@ class UserRepository:
 
     @staticmethod
     @transaction.atomic
-    def create_user(firstname: str, lastname: str, email: str, password: str, **extra_fields) -> User:
+    def create_user(firstname: str, lastname: str, email: str, password: str, is_superuser: bool, is_staff: bool, is_active: bool) -> User:
         """
         Create and save a new user with the given email and password.
         Uses a transaction to ensure data integrity.
@@ -66,10 +66,11 @@ class UserRepository:
             lastname=lastname,
             email=email,
             password=password,
-            **extra_fields
+            is_superuser=is_superuser,
+            is_staff=is_staff,
+            is_active=is_active
         )
 
-        print("*********** User created:", user)
         return user
 
     @staticmethod

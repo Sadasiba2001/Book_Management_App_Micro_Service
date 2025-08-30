@@ -40,7 +40,7 @@ class JWTUtils:
                 settings.JWT_SECRET_KEY, 
                 algorithm=settings.JWT_ALGORITHM
             )
-            print("*********** JWT token generated:", token)
+            
             return token
         except Exception as e:
             print("Error generating JWT token:", e)

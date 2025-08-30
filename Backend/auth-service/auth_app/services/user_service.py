@@ -11,7 +11,9 @@ class UserService:
         lastname: str, 
         email: str, 
         password: str,         
-        **extra_fields
+        is_superuser: bool,
+        is_staff: bool,
+        is_active: bool
         ) -> Tuple[Optional[User], Optional[str]]:
         """
         Business logic for user registration.
@@ -22,8 +24,10 @@ class UserService:
                 email=email,
                 password=password,
                 firstname=firstname,
-                lastname=lastname,  
-                **extra_fields
+                lastname=lastname,
+                is_superuser=is_superuser,
+                is_staff=is_staff,
+                is_active=is_active
             )
 
             jwt_token = JWTUtils.generate_jwt_token(user.id, user.email)
