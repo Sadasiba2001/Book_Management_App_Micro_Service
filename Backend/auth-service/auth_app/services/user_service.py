@@ -44,7 +44,7 @@ class UserService:
         Business logic for user login.
         Returns a tuple of (user_object, error_message).
         """
-        user = UserRepository.get_user_by_email(email)
+        user = UserRepository.get_login_user_details(email)
         if not user:
             return None, "User not found."
 
@@ -56,12 +56,27 @@ class UserService:
         return user, jwt_token, None
 
     @staticmethod
-    def get_user (userId: str, name: str, email: str) -> Tuple[Optional[User], Optional[str]]:
+    def get_user (userId: str, firstname: str, lastname: str, email: str, page: int, limit: int) -> Tuple[Optional[User], Optional[str]]:
         """Business logic for retrieving a user by various criteria."""
-        user = UserRepository.get_all_users() or UserRepository.get_user_by_id(userId) or UserRepository.get_user_by_name(name) or UserRepository.get_user_by_email(email)
-        if not user:
-            return None, "User not found."
-        return user, None
+        
+        if (userId):
+            user = UserRepository.get_user_by_id(userId, page, limit)
+            if not user:
+                return None, "User not found."
+            return user, None
+        elif(firstname or lastname):
+            user = UserRepository.get_user_by_name(firstname, lastname, page, limit)
+            if not user:
+                return None, "User not found."
+        elif(email):
+            user = UserRepository.get_user_by_email(email, page, limit)
+            if not user:
+                return None, "User not found."
+        else:
+            user = UserRepository.get_all_users(page, limit)
+            if not user:
+                return None, "User not found."
+            return user, None
 
     @staticmethod
     def get_user_profile(user_id: int) -> Optional[User]:

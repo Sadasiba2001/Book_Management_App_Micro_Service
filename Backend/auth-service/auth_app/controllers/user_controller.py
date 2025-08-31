@@ -1,10 +1,12 @@
 from rest_framework import status
+from ..services import UserService
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from typing import Tuple
+from auth_app.middleware import jwt_auth_required
+from ..utils import CustomPagination
+# from django.views.decorators.csrf import csrf_exempt
 from ..api import UserRegistrationSerializer, UserProfileSerializer, UserLoginSerializer
-from ..services import UserService
 
 """
 Handles HTTP requests for user-related operations.
@@ -81,6 +83,7 @@ class UserController:
         POST /api/auth/login/
         """
         # Validate incoming data
+        print("Entering into login function and Trying to validate user login data")
         serializer = UserLoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(
@@ -131,16 +134,31 @@ class UserController:
 
     @staticmethod
     @api_view(['GET'])
+    @jwt_auth_required
     def get_user(request: Request) -> Response:
         """
         API endpoint for retrieving a user by various criteria.
-        GET /api/auth/user/
+        GET /api/auth/user/?userId=<id>&name=<name>&email=<email>
+        Requires a valid JWT token in cookies or Authorization header.
         """
-        userId = request.query_params.get("userId")
-        name = request.query_params.get("name")
+        # Get query parameters
+        user_id = request.query_params.get("userId")
+        firstname = request.query_params.get("firstname")
+        lastname = request.query_params.get("lastname")
         email = request.query_params.get("email")
+        page = int(request.query_params.get("page", 1))
+        limit = int(request.query_params.get("limit", 5))
+        
 
-        user, error = UserService.get_user(userId=userId, name=name, email=email)
+        # Call UserService to fetch user
+        user, error = UserService.get_user(
+            userId=user_id, 
+            firstname=firstname, 
+            lastname=lastname, 
+            email=email, 
+            page=page, 
+            limit=limit
+            )
 
         if error:
             return Response(
@@ -149,18 +167,7 @@ class UserController:
             )
 
         # Serialize the user for the response
-        serializer = UserLoginSerializer(data=request.data)
-        user, error = UserService.get_user(userId=userId, name=name, email=email)
-
-        if error:
-            return Response(
-                {"error": error},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Serialize the user for the response
-        response_serializer = UserProfileSerializer(user)
-
+        response_serializer = UserProfileSerializer(user, many=True)
         return Response(
             {
                 "message": "User retrieved successfully",

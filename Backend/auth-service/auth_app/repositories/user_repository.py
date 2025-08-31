@@ -8,44 +8,54 @@ class UserRepository:
     This abstracts the data layer from the rest of the application.
     """
 
-    
     @staticmethod
-    def get_all_users() -> Optional[list[User]]:
-        """
-        Retrieve all users.
-        """
-        try:
-            return list(User.objects.all())
-        except User.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_user_by_name(name: str) -> Optional[User]:
-        """
-        Retrieve a user by their name.
-        """
-        try:
-            return User.objects.filter(name__icontains=name).first()
-        except User.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_user_by_id(user_id: int) -> Optional[User]:
-        """
-        Retrieve a user by their primary key (id).
-        """
-        try:
-            return User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_user_by_email(email: str) -> Optional[User]:
+    def get_login_user_details(email: str) -> Optional[User]:
         """
         Retrieve a user by their unique email address.
         """
         try:
             return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+    
+    @staticmethod
+    def get_all_users(page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve all users.
+        """
+        
+        try:
+            return list(User.objects.all()[page * limit:(page + 1) * limit])
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_name(firstname: str, lastname: str, page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve a user by their name.
+        """
+        try:
+            return list(User.objects.filter(firstname__icontains=firstname, lastname__icontains=lastname)[page * limit:(page + 1) * limit])
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_id(userId: int, page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve a user by their primary key (id).
+        """
+        try:
+            return User.objects.filter(id=userId)[page * limit:(page + 1) * limit]
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_email(email: str, page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve a user by their unique email address.
+        """
+        try:
+            return list(User.objects.filter(email=email)[page * limit:(page + 1) * limit])
         except User.DoesNotExist:
             return None
 
