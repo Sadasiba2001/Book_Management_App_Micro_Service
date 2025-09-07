@@ -70,6 +70,28 @@ class UserService:
             print("*********** SERVICE: Login error:", str(e))
             return None, None, "An unexpected error occurred during login."
     @staticmethod
+    @staticmethod
+    def logout_user(token: str) -> Tuple[bool, Optional[str]]:
+        """
+        Business logic for user logout.
+        Returns a tuple of (success, error_message).
+        """
+        try:
+            # Verify token is valid
+            payload = JWTUtils.verify_jwt_token(token)
+            if not payload:
+                return False, "Invalid or expired token"
+            
+            # Add token to blacklist (optional - for enhanced security)
+            # You can implement token blacklisting here if needed
+            # TokenBlacklistRepository.add_token_to_blacklist(token)
+            
+            print("*********** SERVICE: User logged out successfully")
+            return True, None
+            
+        except Exception as e:
+            print("*********** SERVICE: Logout error:", str(e))
+            return False, "An unexpected error occurred during logout."
     def get_user_profile(user_id: int) -> Optional[User]:
         """Business logic for retrieving a user's profile."""
         return UserRepository.get_user_by_id(user_id)
