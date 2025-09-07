@@ -152,7 +152,10 @@ class UserService:
             response.delete_cookie(
                 key='access_token',
                 path='/',
-                samesite='Lax'
+                samesite='Lax',
+                domain='localhost',
+                secure=False,
+                httponly=True
             )
 
             return response
