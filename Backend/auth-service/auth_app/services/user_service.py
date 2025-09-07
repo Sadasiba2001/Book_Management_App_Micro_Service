@@ -1,4 +1,5 @@
 from typing import Optional, Tuple
+from django.contrib.auth import authenticate
 from ..models import User
 from ..repositories import UserRepository
 from ..utils import JWTUtils
