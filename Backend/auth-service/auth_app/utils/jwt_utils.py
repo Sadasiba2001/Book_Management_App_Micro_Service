@@ -28,6 +28,7 @@ class JWTUtils:
 
 
         try:
+            print(f"ENCODE: The secret key is: {settings.JWT_SECRET_KEY}\nThe algorithm is: {settings.JWT_ALGORITHM}")
             payload = {
                 'user_id': user_id,
                 'email': email,
@@ -40,7 +41,8 @@ class JWTUtils:
                 settings.JWT_SECRET_KEY, 
                 algorithm=settings.JWT_ALGORITHM
             )
-            print("*********** JWT token generated:", token)
+            print("ENCODED: Generated JWT token:", token)
+
             return token
         except Exception as e:
             print("Error generating JWT token:", e)

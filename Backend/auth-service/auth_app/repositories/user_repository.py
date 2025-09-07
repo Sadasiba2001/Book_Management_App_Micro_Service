@@ -1,3 +1,4 @@
+import time
 from django.db import transaction
 from typing import Optional
 from ..models import User
@@ -9,47 +10,98 @@ class UserRepository:
     """
 
     @staticmethod
-    def get_user_by_id(user_id: int) -> Optional[User]:
+    def get_login_user_details(email: str) -> Optional[User]:
+        start = time.time()
         """
-        Retrieve a user by their primary key (id).
+        Retrieve a user by their unique email address.
         """
+        print("REPOSITORY: Step 1 time:", time.time() - start)
         try:
-            return User.objects.get(id=user_id)
+            print("REPOSITORY: Step 2 time:", time.time() - start)
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+    
+    @staticmethod
+    def get_all_users(page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve all users.
+        """
+        
+        try:
+            return list(User.objects.all()[page * limit:(page + 1) * limit])
         except User.DoesNotExist:
             return None
 
     @staticmethod
-    def get_user_by_email(email: str) -> Optional[User]:
+    def get_user_by_name(firstname: str, lastname: str, page: int, limit: int) -> Optional[list[User]]:
+        """
+        Retrieve a user by their name.
+        """
+        try:
+            return list(User.objects.filter(firstname__icontains=firstname, lastname__icontains=lastname)[page * limit:(page + 1) * limit])
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_id(userId: int) -> Optional[list[User]]:
+        """
+        Retrieve a user by their primary key (id).
+        """
+        try:
+            return User.objects.filter(id=userId)
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_user_by_email(email: str) -> Optional[list[User]]:
         """
         Retrieve a user by their unique email address.
         """
         try:
-            return User.objects.get(email=email)
+            return User.objects.filter(email=email)
         except User.DoesNotExist:
             return None
 
     @staticmethod
     @transaction.atomic
-    def create_user(firstname: str, lastname: str, email: str, password: str, **extra_fields) -> User:
+    def create_user(
+        firstname: str, 
+        lastname: str, 
+        email: str, 
+        password: str, 
+        is_superuser: bool, 
+        is_staff: bool, 
+        is_active: bool
+    ):
         """
         Create and save a new user with the given email and password.
         Uses a transaction to ensure data integrity.
         """
-        # Check if user already exists
-        if UserRepository.get_user_by_email(email):
-            raise ValueError("A user with this email already exists.")
+        try:
+            print("REPOSITORY: Creating user with email:", email)
 
-        # Use the custom manager's method to create the user
-        user = User.objects.create_user(
-            firstname=firstname,
-            lastname=lastname,
-            email=email,
-            password=password,
-            **extra_fields
-        )
+            # Check if user already exists
+            if UserRepository.get_user_by_email(email):
+                raise ValueError("A user with this email already exists.")
 
-        print("*********** User created:", user)
-        return user
+            # Use the custom manager's method to create the user
+            user = User.objects.create_user(
+                firstname=firstname,
+                lastname=lastname,
+                email=email,
+                password=password,
+                is_superuser=is_superuser,
+                is_staff=is_staff,
+                is_active=is_active
+            )
+            print("REPOSITORY: User created with ID:", user.id)
+            return user
+
+        except Exception as e:
+            print("REPOSITORY ERROR: Failed to create user —", str(e))
+            raise  # Optionally re-raise the exception if you want upstream handling
+
 
     @staticmethod
     @transaction.atomic
@@ -69,3 +121,25 @@ class UserRepository:
         Permanently delete a user from the database.
         """
         user.delete()
+    
+    @staticmethod
+    def delete_user_by_id_or_email(user_id=None, email=None) -> bool:
+        """
+        Delete a user by ID or Email. Returns True if deleted, False if not found.
+        """
+        try:
+            user = None
+            if user_id:
+                user = User.objects.filter(id=user_id).first()
+            elif email:
+                user = User.objects.filter(email=email).first()
+
+            if user:
+                user.delete()
+                return True
+
+            return False
+
+        except Exception:
+            # Optional: Log the error here
+            return False

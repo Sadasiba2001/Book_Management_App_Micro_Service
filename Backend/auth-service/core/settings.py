@@ -13,6 +13,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 """
 load_dotenv(BASE_DIR / '.env') 
 
+"""
+# REST Framework pagination configuration
+"""
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'auth_app.utils.pagination.CustomPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+    ]
+}
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'django-insecure-#50dv!@%arqwtn&s8%@t%by3864!c^+m7c+ag=sicyq1j73#tj'
@@ -63,6 +74,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Custom middleware
+    # 'auth_app.middleware.authentication_middleware.JWTMiddleware',
+    'auth_app.middleware.authentication_middleware.JWTMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
