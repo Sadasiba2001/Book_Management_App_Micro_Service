@@ -1,8 +1,10 @@
 import time
 from ..models import User
 from ..utils import JWTUtils
+from rest_framework import status
 from typing import Optional, Tuple
 from ..repositories import UserRepository
+from rest_framework.response import Response
 from ..constants.response_template import SUCCESS_RESPONSE, ERROR_RESPONSE
 
 class UserService:
@@ -129,11 +131,17 @@ class UserService:
         """
         return UserRepository.delete_user_by_id_or_email(user_id, email)
 
-    # @staticmethod
-    def logout_user():
+    @staticmethod
+    def logout_user(request, user):
         """
         Handles the logout by returning a response that clears the JWT cookie.
         """
+        if not user or not user.is_authenticated:
+            return Response(
+                {"error": "Unauthorized. Valid token required."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         try:
             response = Response(
                 {"message": "Logged out successfully."},

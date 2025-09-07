@@ -17,7 +17,7 @@ def jwt_auth_required(view_func):
             return HttpResponse("No token provided", status=401)
         payload = JWTMiddleware.verify_jwt_token(token)
         if not payload:
-            return HttpResponse("Invalid or expired token", status=401)
+            return HttpResponse("Invalid or expired token 1", status=401)
         user = JWTMiddleware.get_user_from_payload(payload)
         if not user:
             return HttpResponse("Invalid user", status=401)
@@ -60,17 +60,24 @@ class JWTMiddleware:
     # Verify and decode a JWT token.
     """
     @staticmethod
-    def verify_jwt_token(token: str) -> Optional[dict]:
+    def verify_jwt_token(token: str):
         
-        try:
+        try:            
             payload = jwt.decode(
                 token,
                 settings.JWT_SECRET_KEY,
                 algorithms=[settings.JWT_ALGORITHM]
             )
+            if not payload:
+                raise ValueError("Invalid token payload.")
             return payload
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return None
+
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
+            raise ValueError("Invalid or expired token.")  # ✅ raise, not return
+
+        except Exception as e:
+            raise ValueError("Error verifying token.")  # ✅ raise, not return
+
 
     """
     # Helper
@@ -92,19 +99,29 @@ class JWTMiddleware:
     # Middleware call method.
     """
     def __call__(self, request):
+
         requested_path = ['/api/auth/login/', '/api/auth/register/']
         if request.path in requested_path:
             return self.get_response(request)
+        
         token = self.get_token_from_request(request)
-        if token:
+        if not token:
+            return HttpResponse("No token provided", status=401)
+
+        try:
             payload = self.verify_jwt_token(token)
-            if payload:
-                user = self.get_user_from_payload(payload)
-                if user:
-                    request.user = user
-                else:
-                    return HttpResponse("Invalid user", status=401)
-            else:
-                return HttpResponse("Invalid or expired token", status=401)
-        response = self.get_response(request)
-        return response
+            if not payload:
+                return HttpResponse("Payload not setup.\nToken can't authenticated.", status=401)
+
+            user = self.get_user_from_payload(payload)
+            if not user:
+                return HttpResponse("Invalid user", status=401)
+
+            request.user = user
+            response = self.get_response(request)
+            if not response:
+                return HttpResponse("No response from view", status=500)
+
+            return response
+        except Exception as e:
+            return HttpResponse(f"Authentication error: {str(e)}", status=401)

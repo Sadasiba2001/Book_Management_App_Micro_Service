@@ -13,6 +13,7 @@ from auth_app.utils.jwt_utils import JWTUtils
 from rest_framework.decorators import api_view
 from auth_app.middleware import jwt_auth_required
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from ..constants.response_template import SUCCESS_RESPONSE, ERROR_RESPONSE
 from ..api import UserRegistrationSerializer, UserProfileSerializer, UserLoginSerializer
 
@@ -158,10 +159,7 @@ class UserController:
         API endpoint for user login.
         POST /api/auth/login/
         """
-        start = time.time()
         try:
-            print("CONTROLLER: Step 1 time:", time.time() - start)
-
             # Validate incoming data
             serializer = UserLoginSerializer(data=request.data)
             if not serializer.is_valid():
@@ -171,13 +169,11 @@ class UserController:
                     http_status=status.HTTP_400_BAD_REQUEST
                 )
 
-            print("CONTROLLER: Step 2 time:", time.time() - start)
             # Extract validated data
             validated_data = serializer.validated_data
             email = validated_data['email']
             password = validated_data['password']
 
-            print("CONTROLLER: Step 3 time:", time.time() - start)  
             # Call the service to handle business logic
             user, token = UserService.login_user(
                 email=email,
@@ -190,7 +186,6 @@ class UserController:
                     http_status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            print("CONTROLLER: Step 4 time:", time.time() - start)
             # Serialize the user for the response
             response_serializer = UserProfileSerializer(user)
             if not response_serializer:
@@ -200,17 +195,12 @@ class UserController:
                     http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-            print("CONTROLLER: Step 5 time:", time.time() - start)
-            # Create response
-            response = Response(
-                {
-                    "message": "User logged in successfully",
-                    "user": response_serializer.data
-                },
-                status=status.HTTP_200_OK
+            response = ResponseUtils.success(
+                message="User logged in successfully",
+                data=response_serializer.data,
+                http_status=status.HTTP_200_OK
             )
 
-            print("CONTROLLER: Step 6 time:", time.time() - start)
             # Set JWT token as HTTP-only cookie
             response.set_cookie(
                 key='access_token',
@@ -221,12 +211,7 @@ class UserController:
                 max_age=24 * 60 * 60
             )
 
-            print("CONTROLLER: Total time:", time.time() - start)
-            return ResponseUtils.success(
-                message="User logged in successfully",
-                data=response_serializer.data,
-                http_status=status.HTTP_200_OK
-            )
+            return response
         
         except Exception as e:
             # Catch any unexpected errors and return as JSON
@@ -235,6 +220,7 @@ class UserController:
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @staticmethod
     @api_view(['POST'])
     def logout_user(request: Request) -> Response:
         """
@@ -242,12 +228,12 @@ class UserController:
         POST /api/auth/logout/
         """
         try:
-            response = UserService.logout_user()
+            response = UserService.logout_user(request, user=request.user)
 
             return ResponseUtils.success(
                 message="User logged out successfully",
-                error="User logged out successfully",
-                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                data="User logged out successfully",
+                http_status=status.HTTP_200_OK
             )
 
         except Exception as e:
