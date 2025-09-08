@@ -23,45 +23,26 @@ class UserRepository:
             return None
     
     @staticmethod
-    def get_all_users(page: int, limit: int) -> Optional[list[User]]:
-        """
-        Retrieve all users.
-        """
-        
-        try:
-            return list(User.objects.all()[page * limit:(page + 1) * limit])
-        except User.DoesNotExist:
-            return None
+    def get_all_users():
+        return User.objects.all()
 
     @staticmethod
-    def get_user_by_name(firstname: str, lastname: str, page: int, limit: int) -> Optional[list[User]]:
+    def get_user_by_name(firstname: str, lastname: str) -> Optional[list[User]]:
         """
         Retrieve a user by their name.
         """
         try:
-            return list(User.objects.filter(firstname__icontains=firstname, lastname__icontains=lastname)[page * limit:(page + 1) * limit])
+            return list(User.objects.filter(firstname__icontains=firstname, lastname__icontains=lastname))
         except User.DoesNotExist:
             return None
 
     @staticmethod
-    def get_user_by_id(userId: int) -> Optional[list[User]]:
-        """
-        Retrieve a user by their primary key (id).
-        """
-        try:
-            return User.objects.filter(id=userId)
-        except User.DoesNotExist:
-            return None
+    def get_user_by_id(userId: int):
+        return User.objects.filter(id=userId)
 
     @staticmethod
-    def get_user_by_email(email: str) -> Optional[list[User]]:
-        """
-        Retrieve a user by their unique email address.
-        """
-        try:
-            return User.objects.filter(email=email)
-        except User.DoesNotExist:
-            return None
+    def get_user_by_email(email: str):
+        return User.objects.filter(email=email)
 
     @staticmethod
     @transaction.atomic

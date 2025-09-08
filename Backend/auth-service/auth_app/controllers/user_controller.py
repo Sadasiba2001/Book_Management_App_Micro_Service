@@ -5,15 +5,14 @@ from http import HTTPStatus
 from django.conf import settings
 from rest_framework import status
 from ..services import UserService
-from ..utils import CustomPagination
 from rest_framework.request import Request
-from ..utils import JWTUtils, ResponseUtils
 from rest_framework.response import Response
 from auth_app.utils.jwt_utils import JWTUtils
 from rest_framework.decorators import api_view
 from auth_app.middleware import jwt_auth_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from ..utils import JWTUtils, ResponseUtils, CustomPagination
 from ..constants.response_template import SUCCESS_RESPONSE, ERROR_RESPONSE
 from ..api import UserRegistrationSerializer, UserProfileSerializer, UserLoginSerializer
 
@@ -58,8 +57,6 @@ class UserController:
                 is_staff=request.data.get('is_staff', False),
                 is_active=request.data.get('is_active', True)
             )
-
-            print("*********** User and token received from service:", user, token)
 
             if not user or not token:
                 return ResponseUtils.error(
@@ -228,17 +225,20 @@ class UserController:
         POST /api/auth/logout/
         """
         try:
-            response = UserService.logout_user(request, user=request.user)
+            response, error = UserService.logout_user(request, user=request.user)
 
-            return ResponseUtils.success(
-                message="User logged out successfully",
-                data="User logged out successfully",
-                http_status=status.HTTP_200_OK
-            )
+            if error:
+                return ResponseUtils.error(
+                    message="Logout failed",
+                    error=error,
+                    http_status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            return response  
 
         except Exception as e:
             return ResponseUtils.error(
-                message="Logout failed",
+                message="Something went wrong",
                 error=str(e),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -246,11 +246,10 @@ class UserController:
 
     @staticmethod
     @api_view(['GET'])
-    @jwt_auth_required
     def get_user(request: Request) -> Response:
         """
         API endpoint for retrieving a user by various criteria.
-        GET /api/auth/user/?userId=<id>&name=<name>&email=<email>
+        GET /api/auth/user/?userId=<id>&firstname=<name>&lastname=<name>&email=<email>&page=<page>&limit=<limit>
         Requires a valid JWT token in cookies or Authorization header.
         """
         try:
@@ -259,46 +258,60 @@ class UserController:
             firstname = request.query_params.get("firstname")
             lastname = request.query_params.get("lastname")
             email = request.query_params.get("email")
-            page = int(request.query_params.get("page", 1))
-            limit = int(request.query_params.get("limit", 5))
-            
 
-            # Call UserService to fetch user
-            user, error = UserService.get_user(
-                userId=user_id, 
-                firstname=firstname, 
-                lastname=lastname, 
-                email=email, 
-                page=page, 
-                limit=limit
-                )
+            # Call UserService to fetch users
+            users, error = UserService.get_user(
+                userId=user_id,
+                # firstname=firstname,
+                # lastname=lastname,
+                email=email
+            )
 
             if error:
-                return Response(
-                    {"error": error},
-                    status=status.HTTP_404_NOT_FOUND
+                return ResponseUtils.error(
+                    message="User retrieval failed",
+                    error=error,
+                    http_status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Serialize the user for the response
-            response_serializer = UserProfileSerializer(user, many=True)
-            return Response(
-                {
-                    "message": "User retrieved successfully",
-                    "user": response_serializer.data
+            # Paginate the queryset
+            paginator = CustomPagination()
+            paginated_users = paginator.paginate_queryset(users, request)
+
+            # Serialize paginated users
+            serializer = UserProfileSerializer(paginated_users, many=True)
+
+            # Prepare pagination metadata
+            pagination_data = {
+                "total_count": paginator.page.paginator.count,
+                "current_page": paginator.page.number,
+                "page_size": paginator.get_page_size(request),
+                "total_pages": (paginator.page.paginator.count + paginator.get_page_size(request) - 1) // paginator.get_page_size(request),
+                "has_next": paginator.page.has_next(),
+                "has_previous": paginator.page.has_previous(),
+                "next_page": paginator.page.next_page_number() if paginator.page.has_next() else None,
+                "previous_page": paginator.page.previous_page_number() if paginator.page.has_previous() else None,
+            }
+
+            # Return response using ResponseUtils
+            return ResponseUtils.success(
+                message="User retrieved successfully",
+                data={
+                    "pagination": pagination_data,
+                    "user": serializer.data
                 },
-                status=status.HTTP_200_OK
+                http_status=status.HTTP_200_OK
             )
+
         except Exception as e:
-            # Catch any unexpected errors and return as JSON
-            return Response(
-                {"error": "Something went wrong", "details": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            return ResponseUtils.error(
+                message="Something went wrong",
+                error=str(e),
+                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @staticmethod
     @api_view(['DELETE'])
-    @csrf_exempt
-    @jwt_auth_required
     def delete_user(request: Request) -> Response:
         """
         Delete a user by ID or Email.

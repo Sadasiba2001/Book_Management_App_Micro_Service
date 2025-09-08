@@ -91,27 +91,22 @@ class UserService:
             return None, None, f"An error occurred during login: {str(e)}"
 
     @staticmethod
-    def get_user (userId: str, firstname: str, lastname: str, email: str, page: int, limit: int) -> Tuple[Optional[User], Optional[str]]:
+    def get_user (userId: str, email: str) -> Tuple[Optional[User], Optional[str]]:
         """Business logic for retrieving a user by various criteria."""
         
         if (userId):
-            user = UserRepository.get_user_by_id(userId, page, limit)
-            if not user:
-                return None, "User not found."
-            return user, None
-        elif(firstname or lastname):
-            user = UserRepository.get_user_by_name(firstname, lastname, page, limit)
+            user = UserRepository.get_user_by_id(userId)
             if not user:
                 return None, "User not found."
         elif(email):
-            user = UserRepository.get_user_by_email(email, page, limit)
+            user = UserRepository.get_user_by_email(email)
             if not user:
                 return None, "User not found."
         else:
-            user = UserRepository.get_all_users(page, limit)
+            user = UserRepository.get_all_users()
             if not user:
                 return None, "User not found."
-            return user, None
+        return user, None
 
     @staticmethod
     def get_user_profile(user_id: int) -> Optional[User]:
@@ -132,36 +127,26 @@ class UserService:
         return UserRepository.delete_user_by_id_or_email(user_id, email)
 
     @staticmethod
-    def logout_user(request, user):
+    def logout_user(request, user) -> tuple[Response, str]:
         """
         Handles the logout by returning a response that clears the JWT cookie.
         """
         if not user or not user.is_authenticated:
-            return Response(
-                {"error": "Unauthorized. Valid token required."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return None, "Unauthorized. Valid token required."
 
         try:
-            response = Response(
-                {"message": "Logged out successfully."},
-                status=status.HTTP_200_OK
+            response = ResponseUtils.success(
+                message="User logged out successfully",
+                data={},  # Empty data object
+                http_status=status.HTTP_200_OK
             )
-
-            # Clear the JWT token from cookies
             response.delete_cookie(
                 key='access_token',
-                path='/',
                 samesite='Lax',
-                domain='localhost',
                 secure=False,
                 httponly=True
             )
+            return response, None
 
-            return response
         except Exception as e:
-            return ResponseUtils.error(
-                message="Logout failed.",
-                error=str(e),
-                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return None, str(e)
