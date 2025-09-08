@@ -1,0 +1,20 @@
+# Environments
+venv/
+auth-virtual-env/
+.env
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Django
+*.pyc
+__pycache__/
+migrations/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
