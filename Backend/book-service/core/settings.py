@@ -2,11 +2,19 @@ from pathlib import Path
 from dotenv import load_dotenv 
 from decouple import config
 import os
+import sys
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(os.path.join(BASE_DIR, 'books_app'))
+
+# Import cloudinary config
+from books_app.config import configure_cloudinary
+configure_cloudinary()
+
 
 """
 # Load environment variables from .env file
@@ -21,9 +29,7 @@ load_dotenv(BASE_DIR / '.env')
 # SECRET_KEY = 'django-insecure-905*$z^mjb^6#zvq2=@+8efzsgqcah$g5pk(x76rc40sa&=fd='
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-"""
-# JWT Configuration - Get the secret from environment variables
-"""
+""" JWT Configuration - Get the secret from environment variables """
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 if not JWT_SECRET_KEY:
     raise ValueError("JWT_SECRET_KEY not found in environment variables")
@@ -36,12 +42,30 @@ JWT_ACCESS_TOKEN_LIFETIME_HOURS = os.getenv('JWT_ACCESS_TOKEN_LIFETIME_HOURS')
 if not JWT_ACCESS_TOKEN_LIFETIME_HOURS:
     raise ValueError("JWT_ACCESS_TOKEN_LIFETIME_HOURS not found in environment variables")
 
+
+""" CLOUDINARY CONFIGURATION """
+
+cloud_name = config('CLOUDINARY_CLOUD_NAME')
+if not cloud_name:
+    raise ValueError("CLOUDINARY_CLOUD_NAME not found in environment variables")
+
+api_key = config('CLOUDINARY_API_KEY')
+if not api_key:
+    raise ValueError("CLOUDINARY_API_KEY not found in environment variables")
+
+api_secret = config('CLOUDINARY_API_SECRET')
+if not api_secret:
+    raise ValueError("CLOUDINARY_API_SECRET not found in environment variables")
+
+CLOUDINARY_URL = f"cloudinary://{api_key}:{api_secret}@{cloud_name}"
+
+""" End of CLOUDINARY CONFIGURATION """
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-# AUTH_USER_MODEL = 'auth_app.User'
-
 
 # Application definition
 
@@ -54,6 +78,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Application
     'books_app.apps.BooksAppConfig',
+    # cloudnary package
+    'cloudinary',
 ]
 
 MIDDLEWARE = [

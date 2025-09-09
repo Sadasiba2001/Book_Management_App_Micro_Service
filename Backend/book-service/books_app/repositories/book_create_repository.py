@@ -1,6 +1,6 @@
 from ..models import Book
 
 class BookCreateRepository:
-    @staticmethod
-    def create_book(data):
+
+    def create_book(self, data):
         return Book.objects.create(**data)
