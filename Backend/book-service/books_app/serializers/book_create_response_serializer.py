@@ -11,8 +11,9 @@ class BookCreateResponseSerializer(serializers.ModelSerializer):
             'isbn', 
             'publication_date', 
             'genre', 
-            'description',
-            'created_at',
+            'description', 
+            'images',
+            'created_at', 
             'updated_at'
         ]
         read_only_fields = fields

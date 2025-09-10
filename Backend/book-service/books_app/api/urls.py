@@ -1,7 +1,7 @@
 from django.urls import path
-from ..controllers import BookCreateView, CloudinaryUploadView
+from ..controllers import BookController, CloudinaryUploadView
 
 urlpatterns = [
-    path('create/', BookCreateView.as_view(), name='book-create'),
+    path('create/', BookController.as_view(), name='book-create'),
     path('image-upload/', CloudinaryUploadView.as_view(), name='cloudinary-upload'),
 ]

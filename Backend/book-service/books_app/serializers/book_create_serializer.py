@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from ..models import Book
 from django.utils.html import strip_tags
+from .cloudinary_image_upload_serializer import CloudinaryUploadSerializer
 import re
 
 class BookCreateSerializer(serializers.ModelSerializer):
-    
+    images = CloudinaryUploadSerializer(many=True, required=False)
+
     def sanitize_string(self, value):
         """Sanitize string by removing HTML tags, extra spaces, and trimming"""
         if value is None:
@@ -56,10 +58,8 @@ class BookCreateSerializer(serializers.ModelSerializer):
         return sanitized
     
     def validate_description(self, value):
-        """Sanitize description - allow some HTML if needed, or clean completely"""
+        """Sanitize description"""
         if value:
-            # For description, you might want to allow some basic formatting
-            # or sanitize more strictly based on your needs
             sanitized = self.sanitize_string(value)
             return sanitized
         return value
@@ -71,18 +71,21 @@ class BookCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Publication date cannot be in the future.")
         return value
     
+    def validate_images(self, value):
+        """Ensure no more than 5 images are uploaded"""
+        if len(value) > 5:
+            raise serializers.ValidationError("Cannot upload more than 5 images.")
+        return value
+    
     def to_internal_value(self, data):
-        """Override to sanitize all string fields automatically"""
-        # First, let the parent class do its initial validation
         validated_data = super().to_internal_value(data)
-        
-        # Sanitize all string fields
         string_fields = ['title', 'author', 'isbn', 'genre', 'description']
-        
         for field in string_fields:
             if field in validated_data and validated_data[field] is not None:
                 validated_data[field] = self.sanitize_string(validated_data[field])
-        
+        # Ensure images are included in validated data
+        if 'images' in data:
+            validated_data['images'] = data.getlist('images')  # Handle multiple file uploads
         return validated_data
 
     class Meta:
@@ -95,6 +98,7 @@ class BookCreateSerializer(serializers.ModelSerializer):
             'publication_date', 
             'genre', 
             'description', 
+            'images',
             'created_at', 
             'updated_at'
         ]

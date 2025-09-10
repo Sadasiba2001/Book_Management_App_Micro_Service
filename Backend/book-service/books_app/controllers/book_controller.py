@@ -6,7 +6,7 @@ from ..services import BookCreateService
 from ..serializers import BookCreateSerializer, BookCreateResponseSerializer
 from ..utils import ResponseUtils
 
-class BookCreateView(APIView):
+class BookController(APIView):
     def __init__(self, book_create_service: BookCreateService = None, **kwargs):
         super().__init__(**kwargs)
         self.book_create_service = book_create_service or BookCreateService()  
@@ -26,7 +26,7 @@ class BookCreateView(APIView):
             # Extract validated data            
             validated_data = serializer.validated_data
 
-            # Call the service to create the book            
+            # Call the service to create the book       
             book = self.book_create_service.create_book(**validated_data)
             
             if not book:
