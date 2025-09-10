@@ -12,9 +12,9 @@ class CloudinaryUploadView(APIView):
 
     def post(self, request):
         try:
-            print("Received image upload request")
+            
             serializer = CloudinaryUploadSerializer(data=request.data)
-            print("Serializer initialized with data:", request.data)
+            
 
             if not serializer.is_valid():
                 return ResponseUtils.error(
@@ -23,12 +23,10 @@ class CloudinaryUploadView(APIView):
                     http_status=status.HTTP_400_BAD_REQUEST
                 )
 
-            print("Storing validated data")
+            
             image_file = serializer.validated_data['image']
-            print("Validated data stored, proceeding to upload", image_file)
 
             # Upload image to Cloudinary
-            print("Calling CloudinaryService upload_image method")
             upload_result = self.create_service.upload_image(image_file)
 
             return ResponseUtils.success(

@@ -8,7 +8,7 @@ class CloudinaryService:
     def upload_image(self, file, folder="books"):
         """Upload image and return optimized URL"""
         try:
-            print("Entering into CloudinaryService upload_image method")
+            
             # Upload file to Cloudinary
             upload_result = self.create_repo.upload_file(file, folder=folder)
 
